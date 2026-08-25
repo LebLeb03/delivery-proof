@@ -16,9 +16,10 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
       global: { headers: { Authorization: `Bearer ${token}` } },
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { data, error } = await client.auth.getClaims(token);
-    const userId = data?.claims?.sub;
-    if (error || typeof userId !== "string") throw new Error("Unauthorized");
-    return next({ context: { supabase: client, userId } });
+    // Validate the access token with Supabase Auth. Unlike getClaims(), getUser()
+    // works with both legacy HS256 projects and asymmetric JWT signing keys.
+    const { data, error } = await client.auth.getUser(token);
+    if (error || !data.user) throw new Error("Unauthorized");
+    return next({ context: { supabase: client, userId: data.user.id } });
   },
 );

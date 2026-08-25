@@ -7,24 +7,45 @@ import { useAuth } from "@/lib/auth";
 import { getMyContext, onboardOrganization } from "@/lib/context.functions";
 import type { MyContext } from "@/lib/types";
 
+const CONTEXT_LOAD_TIMEOUT_MS = 15_000;
+
 export function AuthenticatedShell() {
   const auth = useAuth();
   const navigate = useNavigate();
   const [context, setContext] = useState<MyContext | null | undefined>();
   const [error, setError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const userId = auth.user?.id;
 
   useEffect(() => {
-    if (!auth.loading && !auth.user) void navigate({ to: "/auth", replace: true });
-    if (auth.user)
-      getMyContext()
-        .then(setContext)
-        .catch((reason: unknown) => setError(messageOf(reason)));
-  }, [auth.loading, auth.user, navigate]);
+    if (auth.loading) return;
+    if (!userId) {
+      void navigate({ to: "/auth", replace: true });
+      return;
+    }
 
+    let active = true;
+    setError(null);
+    setContext(undefined);
+    getMyContextWithTimeout()
+      .then((nextContext) => {
+        if (active) setContext(nextContext);
+      })
+      .catch((reason: unknown) => {
+        if (active) setError(messageOf(reason));
+      });
+    return () => {
+      active = false;
+    };
+  }, [auth.loading, userId, navigate, loadAttempt]);
+
+  if (error)
+    return (
+      <FullPageError message={error} onRetry={() => setLoadAttempt((attempt) => attempt + 1)} />
+    );
   if (auth.loading || (auth.user && context === undefined))
     return <FullPageLoading label="Loading your stores…" />;
   if (!auth.user) return <FullPageLoading label="Opening sign in…" />;
-  if (error) return <FullPageError message={error} />;
   if (context && !context.profile.organization_id)
     return <Onboarding onComplete={() => getMyContext().then(setContext)} />;
   if (!context) return <Onboarding onComplete={() => getMyContext().then(setContext)} />;
@@ -212,14 +233,20 @@ export function FullPageLoading({ label = "Loading…" }: { label?: string }) {
     </main>
   );
 }
-export function FullPageError({ message }: { message: string }) {
+export function FullPageError({
+  message,
+  onRetry = () => location.reload(),
+}: {
+  message: string;
+  onRetry?: () => void;
+}) {
   return (
     <main className="grid min-h-screen place-items-center bg-[#f6f4ef] p-5">
       <div className="max-w-md rounded-2xl border bg-white p-6 text-center">
         <h1 className="font-display text-xl font-bold">This page didn’t load</h1>
         <p className="mt-2 text-sm text-muted-foreground">{message}</p>
         <button
-          onClick={() => location.reload()}
+          onClick={onRetry}
           className="mt-5 rounded-xl bg-[#16251f] px-5 py-3 font-bold text-white"
         >
           Try again
@@ -230,4 +257,21 @@ export function FullPageError({ message }: { message: string }) {
 }
 export function messageOf(reason: unknown) {
   return reason instanceof Error ? reason.message : "Something went wrong";
+}
+
+async function getMyContextWithTimeout() {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      getMyContext(),
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(
+          () => reject(new Error("The workspace lookup timed out. Please try again.")),
+          CONTEXT_LOAD_TIMEOUT_MS,
+        );
+      }),
+    ]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
 }

@@ -1,0 +1,22 @@
+# Dependencies and build output
+node_modules/
+dist/
+.output/
+.vinxi/
+.nitro/
+.tanstack/
+
+# Environment files and local tooling
+.env
+.env.*
+!.env.example
+*.local
+.DS_Store
+.wrangler/
+.dev.vars
+
+# Logs and editors
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json

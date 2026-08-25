@@ -348,6 +348,16 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      onboard_my_organization: {
+        Args: {
+          _organization_name: string;
+          _store_number: string;
+          _store_name?: string | null;
+          _full_name?: string | null;
+          _include_sample_data?: boolean;
+        };
+        Returns: string;
+      };
       can_admin_org: { Args: { _org_id: string }; Returns: boolean };
       can_manage_deliveries: { Args: { _store_id: string }; Returns: boolean };
       can_manage_vendors: { Args: { _org_id: string }; Returns: boolean };

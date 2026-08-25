@@ -1,3 +1,5 @@
+import type { Json } from "@/integrations/supabase/types";
+
 export type AppRole = "market_admin" | "store_manager" | "crew";
 
 export type DeliveryStatus = "received" | "damaged" | "missing_items" | "other_issue";
@@ -63,8 +65,8 @@ export interface AuditEntry {
   created_at: string;
   changed_by: string | null;
   changer_name: string | null;
-  previous_values: Record<string, unknown> | null;
-  new_values: Record<string, unknown> | null;
+  previous_values: Json | null;
+  new_values: Json | null;
 }
 
 export interface DeliveryDetail extends DeliveryListItem {

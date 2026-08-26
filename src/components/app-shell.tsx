@@ -32,7 +32,13 @@ export function AuthenticatedShell() {
         if (active) setContext(nextContext);
       })
       .catch((reason: unknown) => {
-        if (active) setError(messageOf(reason));
+        if (!active) return;
+        const nextError = messageOf(reason);
+        if (nextError === "Unauthorized") {
+          void supabase.auth.signOut().finally(() => navigate({ to: "/auth", replace: true }));
+          return;
+        }
+        setError(nextError);
       });
     return () => {
       active = false;
@@ -256,7 +262,16 @@ export function FullPageError({
   );
 }
 export function messageOf(reason: unknown) {
-  return reason instanceof Error ? reason.message : "Something went wrong";
+  if (reason instanceof Error && reason.message) return reason.message;
+  if (
+    typeof reason === "object" &&
+    reason !== null &&
+    "message" in reason &&
+    typeof reason.message === "string"
+  ) {
+    return reason.message;
+  }
+  return "Something went wrong";
 }
 
 async function getMyContextWithTimeout() {

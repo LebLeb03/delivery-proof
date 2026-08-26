@@ -32,8 +32,7 @@ begin
   update public.profiles set default_store_id = store_id where id = uid;
 
   insert into public.vendors (organization_id, vendor_name) values
-    (org_id, 'Martin Brower'), (org_id, 'Coca-Cola'), (org_id, 'Sysco'),
-    (org_id, 'US Foods'), (org_id, 'Gordon Food Service');
+    (org_id, 'Uber'), (org_id, 'SkipTheDishes'), (org_id, 'DoorDash');
 
   if _include_sample_data then
     select id into vendor_id from public.vendors where organization_id = org_id order by vendor_name limit 1;

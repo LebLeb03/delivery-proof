@@ -4,10 +4,8 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppContextProvider } from "@/lib/app-context";
 import { useAuth } from "@/lib/auth";
-import { getMyContext, onboardOrganization } from "@/lib/context.functions";
-import type { MyContext } from "@/lib/types";
-
-const CONTEXT_LOAD_TIMEOUT_MS = 15_000;
+import { onboardOrganization } from "@/lib/context.functions";
+import type { AppRole, MyContext, StoreInfo } from "@/lib/types";
 
 export function AuthenticatedShell() {
   const auth = useAuth();
@@ -27,7 +25,7 @@ export function AuthenticatedShell() {
     let active = true;
     setError(null);
     setContext(undefined);
-    getMyContextWithTimeout()
+    getMyContextInBrowser()
       .then((nextContext) => {
         if (active) setContext(nextContext);
       })
@@ -35,7 +33,9 @@ export function AuthenticatedShell() {
         if (!active) return;
         const nextError = messageOf(reason);
         if (nextError === "Unauthorized") {
-          void supabase.auth.signOut().finally(() => navigate({ to: "/auth", replace: true }));
+          void supabase.auth.signOut().finally(() => {
+            if (active) void navigate({ to: "/auth", replace: true });
+          });
           return;
         }
         setError(nextError);
@@ -53,8 +53,8 @@ export function AuthenticatedShell() {
     return <FullPageLoading label="Loading your stores…" />;
   if (!auth.user) return <FullPageLoading label="Opening sign in…" />;
   if (context && !context.profile.organization_id)
-    return <Onboarding onComplete={() => getMyContext().then(setContext)} />;
-  if (!context) return <Onboarding onComplete={() => getMyContext().then(setContext)} />;
+    return <Onboarding onComplete={() => getMyContextInBrowser().then(setContext)} />;
+  if (!context) return <Onboarding onComplete={() => getMyContextInBrowser().then(setContext)} />;
 
   const defaultStore =
     context.stores.find((store) => store.id === context.profile.default_store_id) ??
@@ -274,19 +274,33 @@ export function messageOf(reason: unknown) {
   return "Something went wrong";
 }
 
-async function getMyContextWithTimeout() {
-  let timeout: ReturnType<typeof setTimeout> | undefined;
-  try {
-    return await Promise.race([
-      getMyContext(),
-      new Promise<never>((_, reject) => {
-        timeout = setTimeout(
-          () => reject(new Error("The workspace lookup timed out. Please try again.")),
-          CONTEXT_LOAD_TIMEOUT_MS,
-        );
-      }),
-    ]);
-  } finally {
-    if (timeout) clearTimeout(timeout);
-  }
+async function getMyContextInBrowser(): Promise<MyContext | null> {
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user) throw new Error("Unauthorized");
+  const userId = authData.user.id;
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle();
+  if (profileError) throw profileError;
+  if (!profile) return null;
+  const [rolesResult, storesResult, orgResult] = await Promise.all([
+    supabase.from("user_roles").select("role").eq("user_id", userId),
+    supabase.from("user_stores").select("stores(*)").eq("user_id", userId),
+    profile.organization_id
+      ? supabase.from("organizations").select("*").eq("id", profile.organization_id).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+  if (rolesResult.error) throw rolesResult.error;
+  if (storesResult.error) throw storesResult.error;
+  if (orgResult.error) throw orgResult.error;
+  return {
+    profile,
+    roles: (rolesResult.data ?? []).map((row) => row.role as AppRole),
+    stores: (storesResult.data ?? []).flatMap((row) =>
+      row.stores ? [row.stores] : [],
+    ) as StoreInfo[],
+    organization: orgResult.data,
+  };
 }

@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "delivery-proof",
+  "account_id": "18be1ba495077288ed23f121a34f6313",
   "compatibility_date": "2026-08-25",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",

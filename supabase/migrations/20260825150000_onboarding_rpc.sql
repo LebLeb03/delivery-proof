@@ -40,7 +40,7 @@ begin
       (organization_id, store_id, vendor_id, order_number, delivered_at, status, notes, uploaded_by)
     values
       (org_id, store_id, vendor_id, 'DEMO-1234', now() - interval '1 hour', 'received',
-       'Sample record — add a real delivery whenever you are ready.', uid);
+       'Sample record. Add a real delivery whenever you are ready.', uid);
   end if;
   return org_id;
 end;

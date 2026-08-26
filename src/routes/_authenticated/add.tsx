@@ -186,7 +186,7 @@ function AddDeliveryPage() {
                 {context.stores.map((store) => (
                   <option key={store.id} value={store.id}>
                     Store {store.store_number}
-                    {store.store_name ? ` — ${store.store_name}` : ""}
+                    {store.store_name ? ` - ${store.store_name}` : ""}
                   </option>
                 ))}
               </select>
@@ -213,8 +213,8 @@ function AddDeliveryPage() {
                 <strong>
                   {duplicateCount} existing record{duplicateCount === 1 ? "" : "s"}
                 </strong>{" "}
-                use this order number at the selected store. Saving will create a separate
-                delivery—it will never overwrite the others.
+                use this order number at the selected store. Saving will create a separate delivery.
+                It will never overwrite the others.
               </p>
             </div>
           )}

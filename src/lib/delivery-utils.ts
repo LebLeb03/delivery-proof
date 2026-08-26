@@ -62,7 +62,7 @@ export function storeLabel(
 ): string {
   if (!store) return "Unknown store";
   return store.store_name
-    ? `Store ${store.store_number} — ${store.store_name}`
+    ? `Store ${store.store_number} - ${store.store_name}`
     : `Store ${store.store_number}`;
 }
 

@@ -24,7 +24,11 @@ function AuthPage() {
     const result =
       mode === "login"
         ? await supabase.auth.signInWithPassword({ email, password })
-        : await supabase.auth.signUp({ email, password });
+        : await supabase.auth.signUp({
+            email,
+            password,
+            options: { emailRedirectTo: window.location.origin },
+          });
     if (result.error) setError(result.error.message);
     else if (mode === "signup" && !result.data.session)
       setError("Check your email to confirm the account, then sign in.");

@@ -75,7 +75,7 @@ export function AuthenticatedShell() {
                 <p className="font-display font-bold">Delivery Proof</p>
                 <p className="text-xs text-white/60">
                   {defaultStore
-                    ? `Store ${defaultStore.store_number}${defaultStore.store_name ? ` - ${defaultStore.store_name}` : ""}`
+                    ? `Store ${defaultStore.store_number}${defaultStore.store_name ? ` ${defaultStore.store_name}` : ""}`
                     : context.organization?.name}
                 </p>
               </div>

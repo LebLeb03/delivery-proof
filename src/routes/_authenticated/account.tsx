@@ -64,7 +64,7 @@ function AccountPage() {
               {context.stores.map((store) => (
                 <option key={store.id} value={store.id}>
                   Store {store.store_number}
-                  {store.store_name ? ` - ${store.store_name}` : ""}
+                  {store.store_name ? ` ${store.store_name}` : ""}
                 </option>
               ))}
             </select>

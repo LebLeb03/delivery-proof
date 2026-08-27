@@ -1,8 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Building2, Save, Settings, ShieldCheck } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import {
+  Building2,
+  CheckCircle2,
+  Package,
+  PackageX,
+  Save,
+  Settings,
+  ShieldCheck,
+} from "lucide-react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { updateMyProfile } from "@/lib/admin.functions";
 import { useAppContext } from "@/lib/app-context";
+import { getDeliverySummary } from "@/lib/delivery.functions";
 
 export const Route = createFileRoute("/_authenticated/account")({ component: AccountPage });
 
@@ -10,7 +19,22 @@ function AccountPage() {
   const context = useAppContext();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [summary, setSummary] = useState<{
+    total: number;
+    received: number;
+    damaged: number;
+    missingItems: number;
+  }>();
   const isManager = context.roles.some((role) => role !== "crew");
+  const defaultStore =
+    context.stores.find((store) => store.id === context.profile.default_store_id) ??
+    context.stores[0];
+  useEffect(() => {
+    if (!defaultStore) return;
+    getDeliverySummary({ data: { storeId: defaultStore.id } })
+      .then(setSummary)
+      .catch(() => setSummary(undefined));
+  }, [defaultStore?.id]);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaved(false);
@@ -32,6 +56,45 @@ function AccountPage() {
     <main className="mx-auto max-w-3xl px-5 py-7">
       <p className="text-sm font-bold uppercase tracking-[.15em] text-[#a83225]">Preferences</p>
       <h1 className="mt-1 font-display text-3xl font-extrabold">Account</h1>
+      <section className="mt-6 rounded-2xl border bg-white p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[.15em] text-[#a83225]">
+              Delivery summary
+            </p>
+            <h2 className="mt-1 font-display text-xl font-bold">
+              {defaultStore ? `Store ${defaultStore.store_number}` : "Your deliveries"}
+            </h2>
+          </div>
+          <Package className="shrink-0 text-[#a83225]" />
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <SummaryCard
+            label="Total"
+            value={summary?.total}
+            icon={<Package size={18} />}
+            tone="bg-[#16251f] text-white"
+          />
+          <SummaryCard
+            label="Received"
+            value={summary?.received}
+            icon={<CheckCircle2 size={18} />}
+            tone="bg-[#eaf7ee] text-[#21623a]"
+          />
+          <SummaryCard
+            label="Damaged"
+            value={summary?.damaged}
+            icon={<PackageX size={18} />}
+            tone="bg-[#fff0df] text-[#955113]"
+          />
+          <SummaryCard
+            label="Missing items"
+            value={summary?.missingItems}
+            icon={<PackageX size={18} />}
+            tone="bg-[#fdebed] text-[#a83225]"
+          />
+        </div>
+      </section>
       <section className="mt-6 rounded-2xl border bg-white p-5">
         <div className="flex items-center gap-3">
           <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#16251f] text-white">
@@ -106,5 +169,27 @@ function AccountPage() {
         )}
       </section>
     </main>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  icon,
+  tone,
+}: {
+  label: string;
+  value: number | undefined;
+  icon: ReactNode;
+  tone: string;
+}) {
+  return (
+    <div className={`rounded-xl p-4 ${tone}`}>
+      <div className="flex items-center justify-between gap-2">
+        {icon}
+        <span className="text-xs font-semibold">{label}</span>
+      </div>
+      <p className="mt-3 text-3xl font-extrabold tabular-nums">{value ?? "-"}</p>
+    </div>
   );
 }

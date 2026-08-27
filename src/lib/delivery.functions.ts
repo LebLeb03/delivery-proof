@@ -53,6 +53,31 @@ const duplicateSchema = z.object({
   storeId: z.string().uuid(),
 });
 
+const summarySchema = z.object({ storeId: z.string().uuid() });
+
+export const getDeliverySummary = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .validator(summarySchema)
+  .handler(async ({ context, data }) => {
+    const countFor = async (status?: DeliveryStatus) => {
+      let query = context.supabase
+        .from("deliveries")
+        .select("id", { count: "exact", head: true })
+        .eq("store_id", data.storeId);
+      if (status) query = query.eq("status", status);
+      const { count, error } = await query;
+      if (error) throw error;
+      return count ?? 0;
+    };
+    const [total, received, damaged, missingItems] = await Promise.all([
+      countFor(),
+      countFor("received"),
+      countFor("damaged"),
+      countFor("missing_items"),
+    ]);
+    return { total, received, damaged, missingItems };
+  });
+
 export const checkDuplicateOrder = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .validator(duplicateSchema)

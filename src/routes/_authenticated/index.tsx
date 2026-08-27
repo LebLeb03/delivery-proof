@@ -68,9 +68,6 @@ function HomePage() {
       </form>
       <div className="mt-8 flex items-end justify-between">
         <div>
-          <p className="text-sm font-bold uppercase tracking-[.15em] text-muted-foreground">
-            At a glance
-          </p>
           <h2 className="font-display text-2xl font-bold">Recent deliveries</h2>
         </div>
         <Link to="/search" search={{ q: "" }} className="text-sm font-bold text-[#a83225]">

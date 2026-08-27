@@ -136,15 +136,37 @@
 }
 
 @layer base {
+  html {
+    min-width: 320px;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   * {
     border-color: var(--color-border);
   }
 
   body {
+    min-width: 320px;
+    overflow-x: hidden;
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
   }
 
   h1,

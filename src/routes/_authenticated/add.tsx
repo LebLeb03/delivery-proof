@@ -95,15 +95,15 @@ function AddDeliveryPage() {
           Capture clear photos and the essential delivery details.
         </p>
       </div>
-      <form onSubmit={submit} className="mt-7 space-y-5">
-        <section className="rounded-2xl border bg-white p-5">
+      <form onSubmit={submit} className="mt-6 space-y-4 sm:mt-7 sm:space-y-5">
+        <section className="rounded-2xl border bg-white p-4 sm:p-5">
           <h2 className="font-display text-lg font-bold">Photo proof</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Labels, quantity and condition should be readable.
           </p>
-          <label className="mt-4 flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#e24a32]/35 bg-[#e24a32]/5 text-center">
-            <Camera className="text-[#e24a32]" />
-            <span className="mt-2 font-bold">Take photos or choose files</span>
+          <label className="mt-4 flex min-h-44 cursor-pointer touch-manipulation flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#e24a32]/35 bg-[#e24a32]/5 px-4 text-center active:bg-[#e24a32]/10">
+            <Camera className="h-7 w-7 text-[#e24a32]" />
+            <span className="mt-2 text-base font-bold">Take photos or choose files</span>
             <span className="mt-1 text-xs text-muted-foreground">Multiple images supported</span>
             <input
               className="sr-only"
@@ -134,7 +134,7 @@ function AddDeliveryPage() {
                     onClick={() =>
                       setFiles((items) => items.filter((_, itemIndex) => itemIndex !== index))
                     }
-                    className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white"
+                    className="absolute right-1 top-1 grid h-8 w-8 place-items-center rounded-full bg-black/70 text-white"
                   >
                     <X size={14} />
                   </button>
@@ -143,7 +143,7 @@ function AddDeliveryPage() {
             </div>
           )}
         </section>
-        <section className="rounded-2xl border bg-white p-5">
+        <section className="rounded-2xl border bg-white p-4 sm:p-5">
           <h2 className="font-display text-lg font-bold">Delivery details</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <label className="text-sm font-semibold">

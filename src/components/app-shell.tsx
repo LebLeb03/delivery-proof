@@ -66,21 +66,21 @@ export function AuthenticatedShell() {
     <AppContextProvider value={context}>
       <div className="min-h-screen bg-[#f6f4ef] pb-24">
         <header className="border-b border-white/10 bg-[#16251f] text-white">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-            <Link to="/" className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#e24a32]">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:px-5 sm:py-4">
+            <Link to="/" className="flex min-w-0 items-center gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#e24a32]">
                 <ClipboardList size={22} />
               </span>
-              <div>
-                <p className="font-display font-bold">Delivery Proof</p>
-                <p className="text-xs text-white/60">
+              <div className="min-w-0">
+                <p className="truncate font-display font-bold">Delivery Proof</p>
+                <p className="truncate text-xs text-white/60">
                   {defaultStore
                     ? `Store ${defaultStore.store_number}${defaultStore.store_name ? ` ${defaultStore.store_name}` : ""}`
                     : context.organization?.name}
                 </p>
               </div>
             </Link>
-            <div className="flex items-center gap-1">
+            <div className="flex shrink-0 items-center gap-1">
               {isManager && (
                 <Link
                   to="/admin"

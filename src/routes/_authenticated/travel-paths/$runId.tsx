@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Camera, CheckCircle2, Circle, ImagePlus } from "lucide-react";
+import { Camera, CheckCircle2, Circle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppContext } from "@/lib/app-context";
@@ -26,10 +26,18 @@ type RunItem = {
 type Run = {
   id: string;
   template_name: string;
-  status: string;
+  status: TravelPathStatus;
   store_id: string;
   store: { store_number: string; store_name: string | null } | null;
   items: RunItem[];
+};
+type TravelPathStatus = "in_progress" | "ready_for_review" | "operational" | "needs_attention";
+
+const STATUS_LABELS: Record<TravelPathStatus, string> = {
+  in_progress: "In progress",
+  ready_for_review: "Ready for review",
+  operational: "Operational",
+  needs_attention: "Needs attention",
 };
 
 function TravelPathRunPage() {
@@ -39,6 +47,7 @@ function TravelPathRunPage() {
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
   async function load() {
     try {
       setRun(await getTravelPathRun({ data: { runId } }));
@@ -82,7 +91,7 @@ function TravelPathRunPage() {
       setBusyId(null);
     }
   }
-  async function submit(status: "ready_for_review" | "operational" | "needs_attention") {
+  async function submit(status: Exclude<TravelPathStatus, "in_progress">) {
     if (!run) return;
     const missing = run.items.filter(
       (item) => item.photo_required && item.travel_path_photos.length === 0,
@@ -94,9 +103,12 @@ function TravelPathRunPage() {
       return;
     }
     setSubmitting(true);
+    setError(null);
+    setSavedMessage(null);
     try {
       await updateTravelPathRunStatus({ data: { runId: run.id, status } });
-      await load();
+      setRun((current) => (current ? { ...current, status } : current));
+      setSavedMessage(`Station check updated to ${STATUS_LABELS[status]}.`);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not update the checklist");
     } finally {
@@ -116,9 +128,14 @@ function TravelPathRunPage() {
         ← Travel Paths
       </Link>
       <div className="mt-4 rounded-3xl bg-[#173327] p-6 text-white">
-        <p className="text-sm font-bold uppercase tracking-[.15em] text-white/60">
-          Store {run.store?.store_number}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm font-bold uppercase tracking-[.15em] text-white/60">
+            Store {run.store?.store_number}
+          </p>
+          <span className="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold">
+            {STATUS_LABELS[run.status]}
+          </span>
+        </div>
         <h1 className="mt-2 font-display text-3xl font-extrabold">{run.template_name}</h1>
         <p className="mt-3 text-sm text-white/70">
           {complete} of {run.items.length} sections checked
@@ -132,6 +149,15 @@ function TravelPathRunPage() {
       </div>
       {error && (
         <p className="mt-5 rounded-xl bg-destructive/10 p-4 text-sm text-destructive">{error}</p>
+      )}
+      {savedMessage && (
+        <div
+          role="status"
+          className="mt-5 flex items-center gap-3 rounded-xl bg-[#dff4e8] p-4 text-sm font-bold text-[#185c3d]"
+        >
+          <CheckCircle2 className="shrink-0" size={21} />
+          {savedMessage}
+        </div>
       )}
       <section className="mt-6 space-y-4">
         {run.items.map((item, index) => (
@@ -205,23 +231,26 @@ function TravelPathRunPage() {
           <button
             disabled={submitting}
             onClick={() => void submit("ready_for_review")}
-            className="rounded-xl bg-[#173327] px-4 py-3 text-sm font-bold text-white"
+            aria-pressed={run.status === "ready_for_review"}
+            className={`rounded-xl bg-[#173327] px-4 py-3 text-sm font-bold text-white transition disabled:opacity-60 ${run.status === "ready_for_review" ? "ring-4 ring-[#173327]/25 ring-offset-2" : ""}`}
           >
-            Ready for review
+            {submitting ? "Updating…" : "Ready for review"}
           </button>
           <button
             disabled={submitting}
             onClick={() => void submit("operational")}
-            className="rounded-xl bg-[#2a7a58] px-4 py-3 text-sm font-bold text-white"
+            aria-pressed={run.status === "operational"}
+            className={`rounded-xl bg-[#2a7a58] px-4 py-3 text-sm font-bold text-white transition disabled:opacity-60 ${run.status === "operational" ? "ring-4 ring-[#2a7a58]/25 ring-offset-2" : ""}`}
           >
-            Mark operational
+            {submitting ? "Updating…" : "Mark operational"}
           </button>
           <button
             disabled={submitting}
             onClick={() => void submit("needs_attention")}
-            className="rounded-xl bg-[#e24a32] px-4 py-3 text-sm font-bold text-white"
+            aria-pressed={run.status === "needs_attention"}
+            className={`rounded-xl bg-[#e24a32] px-4 py-3 text-sm font-bold text-white transition disabled:opacity-60 ${run.status === "needs_attention" ? "ring-4 ring-[#e24a32]/25 ring-offset-2" : ""}`}
           >
-            Needs attention
+            {submitting ? "Updating…" : "Needs attention"}
           </button>
         </div>
       </section>

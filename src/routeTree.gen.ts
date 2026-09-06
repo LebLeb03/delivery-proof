@@ -17,6 +17,9 @@ import { Route as AuthenticatedAddRouteImport } from './routes/_authenticated/ad
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
 import { Route as AuthenticatedDeliveriesDeliveryIdRouteImport } from './routes/_authenticated/deliveries.$deliveryId'
+import { Route as AuthenticatedTravelPathsIndexRouteImport } from './routes/_authenticated/travel-paths/index'
+import { Route as AuthenticatedTravelPathsRunIdRouteImport } from './routes/_authenticated/travel-paths/$runId'
+import { Route as AuthenticatedTravelPathsManageRouteImport } from './routes/_authenticated/travel-paths/manage'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -58,6 +61,24 @@ const AuthenticatedDeliveriesDeliveryIdRoute =
     path: '/deliveries/$deliveryId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedTravelPathsIndexRoute =
+  AuthenticatedTravelPathsIndexRouteImport.update({
+    id: '/travel-paths/',
+    path: '/travel-paths/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedTravelPathsRunIdRoute =
+  AuthenticatedTravelPathsRunIdRouteImport.update({
+    id: '/travel-paths/$runId',
+    path: '/travel-paths/$runId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedTravelPathsManageRoute =
+  AuthenticatedTravelPathsManageRouteImport.update({
+    id: '/travel-paths/manage',
+    path: '/travel-paths/manage',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -67,6 +88,9 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/search': typeof AuthenticatedSearchRoute
   '/deliveries/$deliveryId': typeof AuthenticatedDeliveriesDeliveryIdRoute
+  '/travel-paths/$runId': typeof AuthenticatedTravelPathsRunIdRoute
+  '/travel-paths/manage': typeof AuthenticatedTravelPathsManageRoute
+  '/travel-paths/': typeof AuthenticatedTravelPathsIndexRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -76,6 +100,9 @@ export interface FileRoutesByTo {
   '/search': typeof AuthenticatedSearchRoute
   '/': typeof AuthenticatedIndexRoute
   '/deliveries/$deliveryId': typeof AuthenticatedDeliveriesDeliveryIdRoute
+  '/travel-paths/$runId': typeof AuthenticatedTravelPathsRunIdRoute
+  '/travel-paths/manage': typeof AuthenticatedTravelPathsManageRoute
+  '/travel-paths': typeof AuthenticatedTravelPathsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -87,6 +114,9 @@ export interface FileRoutesById {
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/deliveries/$deliveryId': typeof AuthenticatedDeliveriesDeliveryIdRoute
+  '/_authenticated/travel-paths/$runId': typeof AuthenticatedTravelPathsRunIdRoute
+  '/_authenticated/travel-paths/manage': typeof AuthenticatedTravelPathsManageRoute
+  '/_authenticated/travel-paths/': typeof AuthenticatedTravelPathsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -98,6 +128,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/search'
     | '/deliveries/$deliveryId'
+    | '/travel-paths/$runId'
+    | '/travel-paths/manage'
+    | '/travel-paths/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -107,6 +140,9 @@ export interface FileRouteTypes {
     | '/search'
     | '/'
     | '/deliveries/$deliveryId'
+    | '/travel-paths/$runId'
+    | '/travel-paths/manage'
+    | '/travel-paths'
   id:
     | '__root__'
     | '/_authenticated'
@@ -117,6 +153,9 @@ export interface FileRouteTypes {
     | '/_authenticated/search'
     | '/_authenticated/'
     | '/_authenticated/deliveries/$deliveryId'
+    | '/_authenticated/travel-paths/$runId'
+    | '/_authenticated/travel-paths/manage'
+    | '/_authenticated/travel-paths/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -182,6 +221,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDeliveriesDeliveryIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/travel-paths/': {
+      id: '/_authenticated/travel-paths/'
+      path: '/travel-paths'
+      fullPath: '/travel-paths/'
+      preLoaderRoute: typeof AuthenticatedTravelPathsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/travel-paths/$runId': {
+      id: '/_authenticated/travel-paths/$runId'
+      path: '/travel-paths/$runId'
+      fullPath: '/travel-paths/$runId'
+      preLoaderRoute: typeof AuthenticatedTravelPathsRunIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/travel-paths/manage': {
+      id: '/_authenticated/travel-paths/manage'
+      path: '/travel-paths/manage'
+      fullPath: '/travel-paths/manage'
+      preLoaderRoute: typeof AuthenticatedTravelPathsManageRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
@@ -192,6 +252,9 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedDeliveriesDeliveryIdRoute: typeof AuthenticatedDeliveriesDeliveryIdRoute
+  AuthenticatedTravelPathsRunIdRoute: typeof AuthenticatedTravelPathsRunIdRoute
+  AuthenticatedTravelPathsManageRoute: typeof AuthenticatedTravelPathsManageRoute
+  AuthenticatedTravelPathsIndexRoute: typeof AuthenticatedTravelPathsIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -202,6 +265,9 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedDeliveriesDeliveryIdRoute:
     AuthenticatedDeliveriesDeliveryIdRoute,
+  AuthenticatedTravelPathsRunIdRoute: AuthenticatedTravelPathsRunIdRoute,
+  AuthenticatedTravelPathsManageRoute: AuthenticatedTravelPathsManageRoute,
+  AuthenticatedTravelPathsIndexRoute: AuthenticatedTravelPathsIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

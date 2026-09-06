@@ -8,21 +8,26 @@ import { addDeliveryPhoto, checkDuplicateOrder, createDelivery } from "@/lib/del
 import { STATUS_OPTIONS } from "@/lib/delivery-utils";
 import { compressImage } from "@/lib/image-utils";
 import type { DeliveryStatus, VendorInfo } from "@/lib/types";
+import { z } from "zod";
 
-export const Route = createFileRoute("/_authenticated/add")({ component: AddDeliveryPage });
+export const Route = createFileRoute("/_authenticated/add")({
+  validateSearch: z.object({ vendor: z.string().uuid().optional() }),
+  component: AddDeliveryPage,
+});
 const fieldClass =
   "mt-2 h-12 w-full rounded-xl border bg-white px-4 outline-none focus:border-primary focus:ring-2 focus:ring-primary/15";
 
 function AddDeliveryPage() {
   const context = useAppContext();
   const navigate = useNavigate();
+  const { vendor: selectedVendorId } = Route.useSearch();
   const [vendors, setVendors] = useState<VendorInfo[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [storeId, setStoreId] = useState(
     context.profile.default_store_id ?? context.stores[0]?.id ?? "",
   );
   const [orderNumber, setOrderNumber] = useState("");
-  const [vendorId, setVendorId] = useState("");
+  const [vendorId, setVendorId] = useState(selectedVendorId ?? "");
   const [status, setStatus] = useState<DeliveryStatus>("received");
   const [notes, setNotes] = useState("");
   const [duplicateCount, setDuplicateCount] = useState(0);

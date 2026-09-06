@@ -9,6 +9,14 @@ import type { DeliveryListItem, VendorInfo } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/")({ component: HomePage });
 
+function vendorColor(vendorName: string) {
+  const name = vendorName.toLowerCase();
+  if (name === "doordash") return "bg-[#dc3826]";
+  if (name === "skipthedishes") return "bg-[#f58228]";
+  if (name === "uber") return "bg-[#171717]";
+  return "bg-[#173327]";
+}
+
 function HomePage() {
   const context = useAppContext();
   const navigate = useNavigate();
@@ -48,12 +56,12 @@ function HomePage() {
           Choose the job you need to complete now.
         </p>
         <div className="mt-4 grid grid-cols-2 gap-3">
-          {vendors.slice(0, 3).map((vendor, index) => (
+          {vendors.slice(0, 3).map((vendor) => (
             <Link
               key={vendor.id}
               to="/add"
               search={{ vendor: vendor.id }}
-              className={`group flex min-h-44 flex-col rounded-3xl p-4 text-white shadow-sm transition active:scale-[.98] sm:p-5 ${index === 0 ? "bg-[#171717]" : index === 1 ? "bg-[#f58228]" : "bg-[#dc3826]"}`}
+              className={`group flex min-h-44 flex-col rounded-3xl p-4 text-white shadow-sm transition active:scale-[.98] sm:p-5 ${vendorColor(vendor.vendor_name)}`}
             >
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/15 text-xl font-extrabold">
                 {vendor.vendor_name.charAt(0)}

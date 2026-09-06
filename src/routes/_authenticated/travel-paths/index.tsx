@@ -26,7 +26,9 @@ type Run = {
 function TravelPathsPage() {
   const context = useAppContext();
   const navigate = useNavigate();
-  const isAdmin = context.roles.includes("market_admin");
+  const isAdmin = context.roles.some(
+    (role) => role === "company_admin" || role === "consultant" || role === "market_admin",
+  );
   const store =
     context.stores.find((item) => item.id === context.profile.default_store_id) ??
     context.stores[0];

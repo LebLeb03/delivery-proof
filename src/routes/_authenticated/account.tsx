@@ -103,7 +103,7 @@ function AccountPage() {
           <div>
             <p className="font-bold">{context.profile.full_name || context.profile.email}</p>
             <p className="text-sm capitalize text-muted-foreground">
-              {context.roles.map((role) => role.replace("_", " ")).join(", ")}
+              {context.roles.map((role) => role.replaceAll("_", " ")).join(", ")}
             </p>
           </div>
         </div>

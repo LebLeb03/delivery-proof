@@ -12,7 +12,9 @@ type DraftItem = { title: string; instructions: string; photoRequired: boolean }
 function TravelPathManagerPage() {
   const context = useAppContext();
   const navigate = useNavigate();
-  const isAdmin = context.roles.includes("market_admin");
+  const isAdmin = context.roles.some(
+    (role) => role === "company_admin" || role === "consultant" || role === "market_admin",
+  );
   const [items, setItems] = useState<DraftItem[]>([
     { title: "", instructions: "", photoRequired: true },
   ]);

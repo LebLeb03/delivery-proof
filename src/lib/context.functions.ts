@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { AppRole, MyContext, StoreInfo } from "./types";
+import type { AppRole, MarketInfo, MyContext, StoreInfo } from "./types";
 
 export const getMyContext = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -13,9 +13,9 @@ export const getMyContext = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) throw error;
     if (!profile) return null;
-    const [rolesResult, storesResult, orgResult] = await Promise.all([
+    const [rolesResult, storesResult, orgResult, marketsResult] = await Promise.all([
       context.supabase.from("user_roles").select("role").eq("user_id", context.userId),
-      context.supabase.from("user_stores").select("stores(*)").eq("user_id", context.userId),
+      context.supabase.from("stores").select("*").order("store_number"),
       profile.organization_id
         ? context.supabase
             .from("organizations")
@@ -23,40 +23,38 @@ export const getMyContext = createServerFn({ method: "GET" })
             .eq("id", profile.organization_id)
             .maybeSingle()
         : Promise.resolve({ data: null, error: null }),
+      context.supabase.from("markets").select("*").order("name"),
     ]);
     if (rolesResult.error) throw rolesResult.error;
     if (storesResult.error) throw storesResult.error;
     if (orgResult.error) throw orgResult.error;
-    const stores = (storesResult.data ?? []).flatMap((row) =>
-      row.stores ? [row.stores] : [],
-    ) as StoreInfo[];
+    if (marketsResult.error) throw marketsResult.error;
+    const stores = (storesResult.data ?? []) as StoreInfo[];
     return {
       profile,
       roles: (rolesResult.data ?? []).map((row) => row.role as AppRole),
       stores,
       organization: orgResult.data,
+      markets: (marketsResult.data ?? []) as MarketInfo[],
     };
   });
 
 const onboardingSchema = z.object({
-  organizationName: z.string().trim().min(2).max(100),
-  storeNumber: z.string().trim().min(1).max(30),
-  storeName: z.string().trim().max(100).optional(),
+  organizationCode: z.string().trim().min(8).max(40),
   fullName: z.string().trim().max(100).optional(),
-  includeSampleData: z.boolean().default(true),
 });
 
 export const onboardOrganization = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator(onboardingSchema)
   .handler(async ({ context, data }) => {
-    const { data: organizationId, error } = await context.supabase.rpc("onboard_my_organization", {
-      _organization_name: data.organizationName,
-      _store_number: data.storeNumber,
-      _store_name: data.storeName ?? null,
-      _full_name: data.fullName ?? null,
-      _include_sample_data: data.includeSampleData,
-    });
+    const { data: organizationId, error } = await context.supabase.rpc(
+      "join_organization_by_code",
+      {
+        _code: data.organizationCode,
+        _full_name: data.fullName ?? null,
+      },
+    );
     if (error) throw error;
     return { organizationId };
   });

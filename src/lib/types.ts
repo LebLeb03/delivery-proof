@@ -1,6 +1,14 @@
 import type { Json } from "@/integrations/supabase/types";
 
-export type AppRole = "market_admin" | "store_manager" | "crew";
+export type AppRole =
+  | "company_admin"
+  | "consultant"
+  | "operations_manager"
+  | "delivery_manager"
+  | "general_manager"
+  | "crew"
+  | "market_admin"
+  | "store_manager";
 
 export type DeliveryStatus = "received" | "damaged" | "missing_items" | "other_issue";
 
@@ -14,6 +22,26 @@ export interface StoreInfo {
   organization_id: string;
   store_number: string;
   store_name: string | null;
+  patch_id: string | null;
+}
+
+export interface MarketInfo {
+  id: string;
+  organization_id: string;
+  name: string;
+}
+
+export interface PatchInfo {
+  id: string;
+  market_id: string;
+  name: string;
+  store_capacity: number;
+  stores: StoreInfo[];
+}
+
+export interface MarketHierarchy extends MarketInfo {
+  patches: PatchInfo[];
+  can_edit: boolean;
 }
 
 export interface ProfileInfo {
@@ -29,6 +57,7 @@ export interface MyContext {
   roles: AppRole[];
   stores: StoreInfo[];
   organization: OrganizationInfo | null;
+  markets: MarketInfo[];
 }
 
 export interface VendorInfo {
@@ -86,4 +115,5 @@ export interface OrgUser {
   full_name: string | null;
   roles: AppRole[];
   store_ids: string[];
+  market_ids: string[];
 }

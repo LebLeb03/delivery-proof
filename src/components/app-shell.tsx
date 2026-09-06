@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppContextProvider } from "@/lib/app-context";
 import { useAuth } from "@/lib/auth";
 import { onboardOrganization } from "@/lib/context.functions";
-import type { AppRole, MyContext, StoreInfo } from "@/lib/types";
+import type { AppRole, MarketInfo, MyContext, StoreInfo } from "@/lib/types";
 
 export function AuthenticatedShell() {
   const auth = useAuth();
@@ -55,12 +55,20 @@ export function AuthenticatedShell() {
   if (context && !context.profile.organization_id)
     return <Onboarding onComplete={() => getMyContextInBrowser().then(setContext)} />;
   if (!context) return <Onboarding onComplete={() => getMyContextInBrowser().then(setContext)} />;
+  if (!context.stores.length && !context.roles.includes("company_admin"))
+    return (
+      <AwaitingAssignment organizationName={context.organization?.name ?? "your organization"} />
+    );
 
   const defaultStore =
     context.stores.find((store) => store.id === context.profile.default_store_id) ??
     context.stores[0];
   const isManager = context.roles.some(
-    (role) => role === "market_admin" || role === "store_manager",
+    (role) =>
+      role === "company_admin" ||
+      role === "consultant" ||
+      role === "operations_manager" ||
+      role === "market_admin",
   );
   return (
     <AppContextProvider value={context}>
@@ -148,11 +156,8 @@ function Onboarding({ onComplete }: { onComplete: () => void }) {
     try {
       await onboardOrganization({
         data: {
-          organizationName: String(form.get("organization")),
-          storeNumber: String(form.get("storeNumber")),
-          storeName: String(form.get("storeName")),
+          organizationCode: String(form.get("organizationCode")),
           fullName: String(form.get("fullName")),
-          includeSampleData: form.get("sample") === "on",
         },
       });
       onComplete();
@@ -169,29 +174,22 @@ function Onboarding({ onComplete }: { onComplete: () => void }) {
           <ClipboardList />
         </span>
         <p className="mt-6 text-sm font-bold uppercase tracking-[.16em] text-[#a83225]">
-          First-time setup
+          Join your organization
         </p>
-        <h1 className="mt-2 font-display text-3xl font-extrabold">
-          Create your restaurant workspace
-        </h1>
+        <h1 className="mt-2 font-display text-3xl font-extrabold">Enter your organization code</h1>
         <p className="mt-2 text-muted-foreground">
-          You’ll become the market administrator and can add stores, vendors and team access.
+          Your code connects you to the correct company. A company administrator will then assign
+          your role and location.
         </p>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="mt-6 grid gap-4">
           <Field name="fullName" label="Your name" required />
           <Field
-            name="organization"
-            label="Organization"
-            placeholder="North Star Restaurants"
+            name="organizationCode"
+            label="Organization code"
+            placeholder="Enter your code"
             required
           />
-          <Field name="storeNumber" label="First store number" placeholder="5178" required />
-          <Field name="storeName" label="Store name" placeholder="Downtown" />
         </div>
-        <label className="mt-5 flex items-center gap-3 rounded-xl bg-muted/60 p-4 text-sm">
-          <input type="checkbox" name="sample" defaultChecked className="h-4 w-4" />
-          Add one sample delivery and a starter vendor list
-        </label>
         {error && (
           <p className="mt-4 rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{error}</p>
         )}
@@ -199,9 +197,41 @@ function Onboarding({ onComplete }: { onComplete: () => void }) {
           disabled={busy}
           className="mt-6 h-13 w-full rounded-xl bg-[#e24a32] font-bold text-white disabled:opacity-60"
         >
-          {busy ? "Creating workspace…" : "Create workspace"}
+          {busy ? "Joining organization…" : "Continue"}
         </button>
       </form>
+    </main>
+  );
+}
+
+function AwaitingAssignment({ organizationName }: { organizationName: string }) {
+  return (
+    <main className="grid min-h-screen place-items-center bg-[#f6f4ef] p-5">
+      <section className="w-full max-w-md rounded-3xl border bg-white p-7 text-center shadow-xl">
+        <span className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[#e24a32] text-white">
+          <ClipboardList />
+        </span>
+        <p className="mt-6 text-sm font-bold uppercase tracking-[.16em] text-[#a83225]">
+          Account connected
+        </p>
+        <h1 className="mt-2 font-display text-2xl font-extrabold">Waiting for assignment</h1>
+        <p className="mt-3 text-sm text-muted-foreground">
+          You joined {organizationName}. A company administrator or consultant needs to assign your
+          role and location before you can open the workspace.
+        </p>
+        <button
+          onClick={() => location.reload()}
+          className="mt-6 h-12 w-full rounded-xl bg-[#16251f] font-bold text-white"
+        >
+          Check again
+        </button>
+        <button
+          onClick={() => supabase.auth.signOut()}
+          className="mt-3 h-11 w-full rounded-xl border font-bold"
+        >
+          Sign out
+        </button>
+      </section>
     </main>
   );
 }
@@ -285,22 +315,23 @@ async function getMyContextInBrowser(): Promise<MyContext | null> {
     .maybeSingle();
   if (profileError) throw profileError;
   if (!profile) return null;
-  const [rolesResult, storesResult, orgResult] = await Promise.all([
+  const [rolesResult, storesResult, orgResult, marketsResult] = await Promise.all([
     supabase.from("user_roles").select("role").eq("user_id", userId),
-    supabase.from("user_stores").select("stores(*)").eq("user_id", userId),
+    supabase.from("stores").select("*").order("store_number"),
     profile.organization_id
       ? supabase.from("organizations").select("*").eq("id", profile.organization_id).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
+    supabase.from("markets").select("*").order("name"),
   ]);
   if (rolesResult.error) throw rolesResult.error;
   if (storesResult.error) throw storesResult.error;
   if (orgResult.error) throw orgResult.error;
+  if (marketsResult.error) throw marketsResult.error;
   return {
     profile,
     roles: (rolesResult.data ?? []).map((row) => row.role as AppRole),
-    stores: (storesResult.data ?? []).flatMap((row) =>
-      row.stores ? [row.stores] : [],
-    ) as StoreInfo[],
+    stores: (storesResult.data ?? []) as StoreInfo[],
     organization: orgResult.data,
+    markets: (marketsResult.data ?? []) as MarketInfo[],
   };
 }

@@ -16,6 +16,7 @@ import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAddRouteImport } from './routes/_authenticated/add'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
+import { Route as AuthenticatedAdminHierarchyRouteImport } from './routes/_authenticated/admin/hierarchy'
 import { Route as AuthenticatedDeliveriesDeliveryIdRouteImport } from './routes/_authenticated/deliveries.$deliveryId'
 import { Route as AuthenticatedTravelPathsIndexRouteImport } from './routes/_authenticated/travel-paths/index'
 import { Route as AuthenticatedTravelPathsRunIdRouteImport } from './routes/_authenticated/travel-paths/$runId'
@@ -55,6 +56,12 @@ const AuthenticatedSearchRoute = AuthenticatedSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAdminHierarchyRoute =
+  AuthenticatedAdminHierarchyRouteImport.update({
+    id: '/hierarchy',
+    path: '/hierarchy',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedDeliveriesDeliveryIdRoute =
   AuthenticatedDeliveriesDeliveryIdRouteImport.update({
     id: '/deliveries/$deliveryId',
@@ -85,8 +92,9 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/account': typeof AuthenticatedAccountRoute
   '/add': typeof AuthenticatedAddRoute
-  '/admin': typeof AuthenticatedAdminRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/search': typeof AuthenticatedSearchRoute
+  '/admin/hierarchy': typeof AuthenticatedAdminHierarchyRoute
   '/deliveries/$deliveryId': typeof AuthenticatedDeliveriesDeliveryIdRoute
   '/travel-paths/$runId': typeof AuthenticatedTravelPathsRunIdRoute
   '/travel-paths/manage': typeof AuthenticatedTravelPathsManageRoute
@@ -96,9 +104,10 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/account': typeof AuthenticatedAccountRoute
   '/add': typeof AuthenticatedAddRoute
-  '/admin': typeof AuthenticatedAdminRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/search': typeof AuthenticatedSearchRoute
   '/': typeof AuthenticatedIndexRoute
+  '/admin/hierarchy': typeof AuthenticatedAdminHierarchyRoute
   '/deliveries/$deliveryId': typeof AuthenticatedDeliveriesDeliveryIdRoute
   '/travel-paths/$runId': typeof AuthenticatedTravelPathsRunIdRoute
   '/travel-paths/manage': typeof AuthenticatedTravelPathsManageRoute
@@ -110,9 +119,10 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/add': typeof AuthenticatedAddRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/admin/hierarchy': typeof AuthenticatedAdminHierarchyRoute
   '/_authenticated/deliveries/$deliveryId': typeof AuthenticatedDeliveriesDeliveryIdRoute
   '/_authenticated/travel-paths/$runId': typeof AuthenticatedTravelPathsRunIdRoute
   '/_authenticated/travel-paths/manage': typeof AuthenticatedTravelPathsManageRoute
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/add'
     | '/admin'
     | '/search'
+    | '/admin/hierarchy'
     | '/deliveries/$deliveryId'
     | '/travel-paths/$runId'
     | '/travel-paths/manage'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/search'
     | '/'
+    | '/admin/hierarchy'
     | '/deliveries/$deliveryId'
     | '/travel-paths/$runId'
     | '/travel-paths/manage'
@@ -152,6 +164,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/search'
     | '/_authenticated/'
+    | '/_authenticated/admin/hierarchy'
     | '/_authenticated/deliveries/$deliveryId'
     | '/_authenticated/travel-paths/$runId'
     | '/_authenticated/travel-paths/manage'
@@ -214,6 +227,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSearchRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/hierarchy': {
+      id: '/_authenticated/admin/hierarchy'
+      path: '/hierarchy'
+      fullPath: '/admin/hierarchy'
+      preLoaderRoute: typeof AuthenticatedAdminHierarchyRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/deliveries/$deliveryId': {
       id: '/_authenticated/deliveries/$deliveryId'
       path: '/deliveries/$deliveryId'
@@ -245,10 +265,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminHierarchyRoute: typeof AuthenticatedAdminHierarchyRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminHierarchyRoute: AuthenticatedAdminHierarchyRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
+
 interface AuthenticatedRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedAddRoute: typeof AuthenticatedAddRoute
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedDeliveriesDeliveryIdRoute: typeof AuthenticatedDeliveriesDeliveryIdRoute
@@ -260,7 +291,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedAddRoute: AuthenticatedAddRoute,
-  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedDeliveriesDeliveryIdRoute:

@@ -4,7 +4,32 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17";
+    PostgrestVersion: "14.5";
+  };
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
   public: {
     Tables: {
@@ -172,6 +197,115 @@ export type Database = {
           },
         ];
       };
+      markets: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          organization_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+          organization_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          organization_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "markets_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      organization_audit_log: {
+        Row: {
+          action: string;
+          changed_by: string | null;
+          created_at: string;
+          entity_id: string | null;
+          entity_type: string;
+          id: string;
+          new_values: Json | null;
+          organization_id: string;
+          previous_values: Json | null;
+        };
+        Insert: {
+          action: string;
+          changed_by?: string | null;
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type: string;
+          id?: string;
+          new_values?: Json | null;
+          organization_id: string;
+          previous_values?: Json | null;
+        };
+        Update: {
+          action?: string;
+          changed_by?: string | null;
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type?: string;
+          id?: string;
+          new_values?: Json | null;
+          organization_id?: string;
+          previous_values?: Json | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "organization_audit_log_changed_by_fkey";
+            columns: ["changed_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "organization_audit_log_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      organization_join_codes: {
+        Row: {
+          active: boolean;
+          code: string;
+          created_at: string;
+          organization_id: string;
+        };
+        Insert: {
+          active?: boolean;
+          code: string;
+          created_at?: string;
+          organization_id: string;
+        };
+        Update: {
+          active?: boolean;
+          code?: string;
+          created_at?: string;
+          organization_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "organization_join_codes_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: true;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       organizations: {
         Row: {
           created_at: string;
@@ -189,6 +323,38 @@ export type Database = {
           name?: string;
         };
         Relationships: [];
+      };
+      patches: {
+        Row: {
+          created_at: string;
+          id: string;
+          market_id: string;
+          name: string;
+          store_capacity: number;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          market_id: string;
+          name: string;
+          store_capacity: number;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          market_id?: string;
+          name?: string;
+          store_capacity?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "patches_market_id_fkey";
+            columns: ["market_id"];
+            isOneToOne: false;
+            referencedRelation: "markets";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       profiles: {
         Row: {
@@ -237,6 +403,7 @@ export type Database = {
           created_at: string;
           id: string;
           organization_id: string;
+          patch_id: string | null;
           store_name: string | null;
           store_number: string;
         };
@@ -244,6 +411,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           organization_id: string;
+          patch_id?: string | null;
           store_name?: string | null;
           store_number: string;
         };
@@ -251,6 +419,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           organization_id?: string;
+          patch_id?: string | null;
           store_name?: string | null;
           store_number?: string;
         };
@@ -260,6 +429,309 @@ export type Database = {
             columns: ["organization_id"];
             isOneToOne: false;
             referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stores_patch_id_fkey";
+            columns: ["patch_id"];
+            isOneToOne: false;
+            referencedRelation: "patches";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      travel_path_photos: {
+        Row: {
+          created_at: string;
+          id: string;
+          original_filename: string | null;
+          run_item_id: string;
+          storage_path: string;
+          uploaded_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          original_filename?: string | null;
+          run_item_id: string;
+          storage_path: string;
+          uploaded_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          original_filename?: string | null;
+          run_item_id?: string;
+          storage_path?: string;
+          uploaded_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "travel_path_photos_run_item_id_fkey";
+            columns: ["run_item_id"];
+            isOneToOne: false;
+            referencedRelation: "travel_path_run_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "travel_path_photos_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      travel_path_run_items: {
+        Row: {
+          completed: boolean;
+          completed_at: string | null;
+          completed_by: string | null;
+          id: string;
+          instructions: string | null;
+          notes: string | null;
+          photo_required: boolean;
+          run_id: string;
+          sort_order: number;
+          template_item_id: string | null;
+          title: string;
+        };
+        Insert: {
+          completed?: boolean;
+          completed_at?: string | null;
+          completed_by?: string | null;
+          id?: string;
+          instructions?: string | null;
+          notes?: string | null;
+          photo_required?: boolean;
+          run_id: string;
+          sort_order?: number;
+          template_item_id?: string | null;
+          title: string;
+        };
+        Update: {
+          completed?: boolean;
+          completed_at?: string | null;
+          completed_by?: string | null;
+          id?: string;
+          instructions?: string | null;
+          notes?: string | null;
+          photo_required?: boolean;
+          run_id?: string;
+          sort_order?: number;
+          template_item_id?: string | null;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "travel_path_run_items_completed_by_fkey";
+            columns: ["completed_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "travel_path_run_items_run_id_fkey";
+            columns: ["run_id"];
+            isOneToOne: false;
+            referencedRelation: "travel_path_runs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "travel_path_run_items_template_item_id_fkey";
+            columns: ["template_item_id"];
+            isOneToOne: false;
+            referencedRelation: "travel_path_template_items";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      travel_path_runs: {
+        Row: {
+          completed_at: string | null;
+          completed_by: string | null;
+          created_at: string;
+          id: string;
+          organization_id: string;
+          started_by: string | null;
+          status: string;
+          store_id: string;
+          template_id: string | null;
+          template_name: string;
+          updated_at: string;
+        };
+        Insert: {
+          completed_at?: string | null;
+          completed_by?: string | null;
+          created_at?: string;
+          id?: string;
+          organization_id: string;
+          started_by?: string | null;
+          status?: string;
+          store_id: string;
+          template_id?: string | null;
+          template_name: string;
+          updated_at?: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          completed_by?: string | null;
+          created_at?: string;
+          id?: string;
+          organization_id?: string;
+          started_by?: string | null;
+          status?: string;
+          store_id?: string;
+          template_id?: string | null;
+          template_name?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "travel_path_runs_completed_by_fkey";
+            columns: ["completed_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "travel_path_runs_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "travel_path_runs_started_by_fkey";
+            columns: ["started_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "travel_path_runs_store_id_fkey";
+            columns: ["store_id"];
+            isOneToOne: false;
+            referencedRelation: "stores";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "travel_path_runs_template_id_fkey";
+            columns: ["template_id"];
+            isOneToOne: false;
+            referencedRelation: "travel_path_templates";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      travel_path_template_items: {
+        Row: {
+          id: string;
+          instructions: string | null;
+          photo_required: boolean;
+          sort_order: number;
+          template_id: string;
+          title: string;
+        };
+        Insert: {
+          id?: string;
+          instructions?: string | null;
+          photo_required?: boolean;
+          sort_order?: number;
+          template_id: string;
+          title: string;
+        };
+        Update: {
+          id?: string;
+          instructions?: string | null;
+          photo_required?: boolean;
+          sort_order?: number;
+          template_id?: string;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "travel_path_template_items_template_id_fkey";
+            columns: ["template_id"];
+            isOneToOne: false;
+            referencedRelation: "travel_path_templates";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      travel_path_templates: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          id: string;
+          name: string;
+          organization_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          name: string;
+          organization_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          name?: string;
+          organization_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "travel_path_templates_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "travel_path_templates_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      user_markets: {
+        Row: {
+          created_at: string;
+          id: string;
+          market_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          market_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          market_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_markets_market_id_fkey";
+            columns: ["market_id"];
+            isOneToOne: false;
+            referencedRelation: "markets";
             referencedColumns: ["id"];
           },
         ];
@@ -348,20 +820,20 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      onboard_my_organization: {
-        Args: {
-          _organization_name: string;
-          _store_number: string;
-          _store_name?: string | null;
-          _full_name?: string | null;
-          _include_sample_data?: boolean;
-        };
-        Returns: string;
-      };
+      can_access_market: { Args: { _market_id: string }; Returns: boolean };
       can_admin_org: { Args: { _org_id: string }; Returns: boolean };
       can_manage_deliveries: { Args: { _store_id: string }; Returns: boolean };
+      can_manage_market_structure: {
+        Args: { _market_id: string };
+        Returns: boolean;
+      };
       can_manage_vendors: { Args: { _org_id: string }; Returns: boolean };
+      can_view_profile: { Args: { _user_id: string }; Returns: boolean };
       can_view_store: { Args: { _store_id: string }; Returns: boolean };
+      create_market_for_my_organization: {
+        Args: { _name: string };
+        Returns: string;
+      };
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"];
@@ -369,11 +841,43 @@ export type Database = {
         };
         Returns: boolean;
       };
+      is_company_admin: { Args: { _user_id?: string }; Returns: boolean };
       is_store_member: { Args: { _store_id: string }; Returns: boolean };
+      join_organization_by_code: {
+        Args: { _code: string; _full_name?: string };
+        Returns: string;
+      };
       my_org_id: { Args: never; Returns: string };
+      onboard_my_organization: {
+        Args: {
+          _full_name?: string;
+          _include_sample_data?: boolean;
+          _organization_name: string;
+          _store_name?: string;
+          _store_number: string;
+        };
+        Returns: string;
+      };
+      set_user_access: {
+        Args: {
+          _market_ids?: string[];
+          _role: Database["public"]["Enums"]["app_role"];
+          _store_ids?: string[];
+          _user_id: string;
+        };
+        Returns: undefined;
+      };
     };
     Enums: {
-      app_role: "market_admin" | "store_manager" | "crew";
+      app_role:
+        | "market_admin"
+        | "store_manager"
+        | "crew"
+        | "company_admin"
+        | "consultant"
+        | "operations_manager"
+        | "delivery_manager"
+        | "general_manager";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -493,9 +997,21 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
-      app_role: ["market_admin", "store_manager", "crew"],
+      app_role: [
+        "market_admin",
+        "store_manager",
+        "crew",
+        "company_admin",
+        "consultant",
+        "operations_manager",
+        "delivery_manager",
+        "general_manager",
+      ],
     },
   },
 } as const;

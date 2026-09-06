@@ -38,44 +38,27 @@ function HomePage() {
     void navigate({ to: "/search", search: { q: query } });
   }
   return (
-    <main className="mx-auto max-w-6xl px-5 py-7">
-      <section className="rounded-3xl bg-[#e24a32] p-6 text-white shadow-lg shadow-[#e24a32]/15 md:p-8">
-        <div>
-          <p className="text-sm font-bold uppercase tracking-[.16em] text-white/70">
-            Photo proof in under a minute
-          </p>
-          <h1 className="mt-2 font-display text-3xl font-extrabold md:text-4xl">
-            Log a delivery while it’s fresh.
-          </h1>
-          <p className="mt-2 text-white/75">
-            {context.organization?.name} · {store ? `Store ${store.store_number}` : "Your stores"}
-          </p>
-        </div>
-      </section>
-      <section className="mt-6">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-[.15em] text-[#a83225]">
-              New delivery
-            </p>
-            <h2 className="mt-1 font-display text-2xl font-extrabold">
-              Tap a partner. Take a photo.
-            </h2>
-          </div>
-          <Camera className="mb-1 shrink-0 text-[#e24a32]" size={26} />
-        </div>
+    <main className="mx-auto max-w-5xl px-4 py-5 sm:px-5 sm:py-7">
+      <section>
+        <p className="text-sm font-bold uppercase tracking-[.15em] text-[#a83225]">New delivery</p>
+        <h1 className="mt-1 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
+          Tap partner. Take photo.
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Choose the job you need to complete now.
+        </p>
         <div className="mt-4 grid grid-cols-2 gap-3">
           {vendors.slice(0, 3).map((vendor, index) => (
             <Link
               key={vendor.id}
               to="/add"
               search={{ vendor: vendor.id }}
-              className={`group min-h-40 rounded-3xl p-5 text-white shadow-sm transition active:scale-[.98] ${index === 0 ? "bg-[#171717]" : index === 1 ? "bg-[#f58228]" : "bg-[#dc3826]"}`}
+              className={`group flex min-h-44 flex-col rounded-3xl p-4 text-white shadow-sm transition active:scale-[.98] sm:p-5 ${index === 0 ? "bg-[#171717]" : index === 1 ? "bg-[#f58228]" : "bg-[#dc3826]"}`}
             >
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/15 text-xl font-extrabold">
                 {vendor.vendor_name.charAt(0)}
               </span>
-              <p className="mt-7 text-xl font-extrabold">{vendor.vendor_name}</p>
+              <p className="mt-auto pt-7 text-lg font-extrabold sm:text-xl">{vendor.vendor_name}</p>
               <p className="mt-1 flex items-center gap-2 text-sm font-bold text-white/80">
                 <Camera size={16} /> Open camera
               </p>
@@ -83,19 +66,19 @@ function HomePage() {
           ))}
           <Link
             to="/travel-paths"
-            className="group min-h-40 rounded-3xl bg-[#173327] p-5 text-white shadow-sm transition active:scale-[.98]"
+            className="group flex min-h-44 flex-col rounded-3xl bg-[#173327] p-4 text-white shadow-sm transition active:scale-[.98] sm:p-5"
           >
             <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/15">
               <ClipboardCheck size={25} />
             </span>
-            <p className="mt-7 text-xl font-extrabold">Travel Paths</p>
+            <p className="mt-auto pt-7 text-lg font-extrabold sm:text-xl">Travel Paths</p>
             <p className="mt-1 flex items-center gap-2 text-sm font-bold text-white/80">
               <Truck size={16} /> Station readiness
             </p>
           </Link>
         </div>
         <p className="mt-3 rounded-2xl bg-[#e9efea] px-4 py-3 text-sm text-[#425248]">
-          Choose a partner or open a station checklist. No extra steps.
+          One tap opens the correct delivery or station workflow.
         </p>
       </section>
       <form onSubmit={submit} className="mt-7 rounded-2xl border bg-white p-4 shadow-sm">

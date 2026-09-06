@@ -234,3 +234,37 @@ export const updateTravelPathRunStatus = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
+
+export const deleteTravelPathRun = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(z.object({ runId: z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    const client = db(context.supabase);
+    const { data: run, error: runError } = await client
+      .from("travel_path_runs")
+      .select("id,status,travel_path_run_items(travel_path_photos(storage_path))")
+      .eq("id", data.runId)
+      .single();
+    if (runError) throw runError;
+    if (run.status !== "in_progress") {
+      throw new Error("Submitted checklists cannot be deleted.");
+    }
+
+    const paths = (run.travel_path_run_items ?? []).flatMap((item: any) =>
+      (item.travel_path_photos ?? []).map((photo: any) => photo.storage_path),
+    );
+    if (paths.length) {
+      const { error: storageError } = await client.storage.from("travel-path-photos").remove(paths);
+      if (storageError) throw storageError;
+    }
+
+    const { data: deletedRun, error } = await client
+      .from("travel_path_runs")
+      .delete()
+      .eq("id", data.runId)
+      .select("id")
+      .maybeSingle();
+    if (error) throw error;
+    if (!deletedRun) throw new Error("You do not have permission to delete this checklist.");
+    return { ok: true };
+  });

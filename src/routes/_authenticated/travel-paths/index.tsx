@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ClipboardCheck, Plus, Search } from "lucide-react";
+import { ClipboardCheck, Plus, Search, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAppContext } from "@/lib/app-context";
 import {
+  deleteTravelPathRun,
   getTravelPathRuns,
   getTravelPathTemplates,
   startTravelPathRun,
@@ -37,6 +38,7 @@ function TravelPathsPage() {
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   async function load() {
     try {
       const [nextTemplates, nextRuns] = await Promise.all([
@@ -68,6 +70,20 @@ function TravelPathsPage() {
       setError(reason instanceof Error ? reason.message : "Could not start the checklist");
     } finally {
       setStarting(null);
+    }
+  }
+  async function remove(run: Run) {
+    if (run.status !== "in_progress") return;
+    if (!window.confirm(`Delete the unsubmitted ${run.template_name} checklist?`)) return;
+    setDeleting(run.id);
+    setError(null);
+    try {
+      await deleteTravelPathRun({ data: { runId: run.id } });
+      await load();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not delete the checklist");
+    } finally {
+      setDeleting(null);
     }
   }
   return (
@@ -147,25 +163,38 @@ function TravelPathsPage() {
         </div>
         <div className="mt-3 grid gap-3">
           {runs.map((run) => (
-            <Link
-              key={run.id}
-              to="/travel-paths/$runId"
-              params={{ runId: run.id }}
-              className="flex items-center justify-between gap-4 rounded-2xl border bg-white p-4"
-            >
-              <div>
-                <p className="font-bold">{run.template_name}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Store {run.store?.store_number} · {new Date(run.created_at).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-bold capitalize">{run.status.replaceAll("_", " ")}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {run.complete}/{run.total} steps
-                </p>
-              </div>
-            </Link>
+            <div key={run.id} className="flex items-center gap-2 rounded-2xl border bg-white p-2">
+              <Link
+                to="/travel-paths/$runId"
+                params={{ runId: run.id }}
+                className="flex min-w-0 flex-1 items-center justify-between gap-4 rounded-xl p-2"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-bold">{run.template_name}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Store {run.store?.store_number} ·{" "}
+                    {new Date(run.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-sm font-bold capitalize">{run.status.replaceAll("_", " ")}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {run.complete}/{run.total} steps
+                  </p>
+                </div>
+              </Link>
+              {run.status === "in_progress" && (
+                <button
+                  type="button"
+                  disabled={deleting !== null}
+                  onClick={() => void remove(run)}
+                  aria-label={`Delete ${run.template_name} checklist`}
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-destructive hover:bg-destructive/10 disabled:opacity-40"
+                >
+                  <Trash2 size={19} />
+                </button>
+              )}
+            </div>
           ))}
           {!runs.length && (
             <p className="rounded-2xl border bg-white p-6 text-sm text-muted-foreground">

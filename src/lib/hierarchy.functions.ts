@@ -88,6 +88,24 @@ export const updatePatch = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const deletePatch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(z.object({ patchId: z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    const { count, error: countError } = await context.supabase
+      .from("stores")
+      .select("id", { count: "exact", head: true })
+      .eq("patch_id", data.patchId);
+    if (countError) throw countError;
+    if ((count ?? 0) > 0) {
+      throw new Error("Move or remove every store from this patch before deleting it.");
+    }
+
+    const { error } = await context.supabase.from("patches").delete().eq("id", data.patchId);
+    if (error) throw error;
+    return { ok: true };
+  });
+
 export const createHierarchyStore = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator(

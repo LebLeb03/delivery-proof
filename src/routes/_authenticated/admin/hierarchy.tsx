@@ -1,5 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Building2, ChevronRight, MapPinned, Plus, Save, ShieldAlert, Store } from "lucide-react";
+import {
+  Building2,
+  ChevronRight,
+  MapPinned,
+  Plus,
+  Save,
+  ShieldAlert,
+  Store,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { messageOf } from "@/components/app-shell";
 import { useAppContext } from "@/lib/app-context";
@@ -7,6 +16,7 @@ import {
   createHierarchyStore,
   createMarket,
   createPatch,
+  deletePatch,
   getCompanyHierarchy,
   updatePatch,
 } from "@/lib/hierarchy.functions";
@@ -124,6 +134,21 @@ function OrganizationHierarchy() {
       await updatePatch({ data: { patchId: selectedPatch.id, name, storeCapacity } });
       await load(selectedMarket.id, selectedPatch.id);
       setNotice(`${name} was updated.`);
+    });
+  }
+
+  function removePatch() {
+    if (!selectedMarket?.can_edit || !selectedPatch) return;
+    if (selectedPatch.stores.length > 0) {
+      setError("Move or remove every store from this patch before deleting it.");
+      return;
+    }
+    if (!window.confirm(`Delete ${selectedPatch.name}? This cannot be undone.`)) return;
+    const patchName = selectedPatch.name;
+    void run(async () => {
+      await deletePatch({ data: { patchId: selectedPatch.id } });
+      await load(selectedMarket.id);
+      setNotice(`${patchName} was deleted.`);
     });
   }
 
@@ -356,6 +381,19 @@ function OrganizationHierarchy() {
                   >
                     <Save size={17} /> Save patch
                   </button>
+                  <button
+                    type="button"
+                    disabled={busy || selectedPatch.stores.length > 0}
+                    onClick={removePatch}
+                    className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 text-sm font-bold text-destructive disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <Trash2 size={17} /> Delete patch
+                  </button>
+                  {selectedPatch.stores.length > 0 && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      A patch can only be deleted after all its stores have been moved or removed.
+                    </p>
+                  )}
                 </form>
                 <form onSubmit={addStore} className="rounded-2xl border bg-white p-5">
                   <h3 className="font-display text-lg font-bold">Add a store</h3>

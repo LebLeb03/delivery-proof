@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
+import { NotFoundScreen, RouteErrorScreen } from "@/components/route-error-screen";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
 import appCss from "../styles.css?url";
@@ -20,6 +21,8 @@ export const Route = createRootRoute({
   }),
   shellComponent: RootShell,
   component: RootComponent,
+  notFoundComponent: NotFoundScreen,
+  errorComponent: RouteErrorScreen,
 });
 
 function RootShell({ children }: { children: ReactNode }) {

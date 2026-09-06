@@ -138,3 +138,45 @@ export const moveStoreToPatch = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
+
+export const deleteHierarchyStore = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(z.object({ storeId: z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    const [deliveries, travelPaths, assignments] = await Promise.all([
+      context.supabase
+        .from("deliveries")
+        .select("id", { count: "exact", head: true })
+        .eq("store_id", data.storeId),
+      context.supabase
+        .from("travel_path_runs")
+        .select("id", { count: "exact", head: true })
+        .eq("store_id", data.storeId),
+      context.supabase
+        .from("user_stores")
+        .select("id", { count: "exact", head: true })
+        .eq("store_id", data.storeId),
+    ]);
+    for (const result of [deliveries, travelPaths, assignments]) {
+      if (result.error) throw result.error;
+    }
+
+    const blockers = [
+      (deliveries.count ?? 0) > 0 && "delivery records",
+      (travelPaths.count ?? 0) > 0 && "station checks",
+      (assignments.count ?? 0) > 0 && "assigned accounts",
+    ].filter(Boolean);
+    if (blockers.length) {
+      throw new Error(`This store cannot be deleted because it has ${blockers.join(", ")}.`);
+    }
+
+    const { data: deletedStore, error } = await context.supabase
+      .from("stores")
+      .delete()
+      .eq("id", data.storeId)
+      .select("id")
+      .maybeSingle();
+    if (error) throw error;
+    if (!deletedStore) throw new Error("You do not have permission to delete this store.");
+    return { ok: true };
+  });

@@ -16,11 +16,12 @@ import {
   createHierarchyStore,
   createMarket,
   createPatch,
+  deleteHierarchyStore,
   deletePatch,
   getCompanyHierarchy,
   updatePatch,
 } from "@/lib/hierarchy.functions";
-import type { MarketHierarchy } from "@/lib/types";
+import type { MarketHierarchy, StoreInfo } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/admin/hierarchy")({
   component: OrganizationHierarchy,
@@ -178,6 +179,22 @@ function OrganizationHierarchy() {
     });
   }
 
+  function removeStore(store: StoreInfo) {
+    if (!selectedMarket?.can_edit || !selectedPatch) return;
+    const storeLabel = `Store ${store.store_number}${store.store_name ? ` ${store.store_name}` : ""}`;
+    if (
+      !window.confirm(
+        `Delete ${storeLabel}? Only stores without delivery history, station checks or assigned accounts can be deleted.`,
+      )
+    )
+      return;
+    void run(async () => {
+      await deleteHierarchyStore({ data: { storeId: store.id } });
+      await load(selectedMarket.id, selectedPatch.id);
+      setNotice(`${storeLabel} was deleted.`);
+    });
+  }
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-8">
       <div>
@@ -295,10 +312,21 @@ function OrganizationHierarchy() {
                     <span className="grid h-9 w-9 place-items-center rounded-lg bg-white text-[#173327]">
                       <Store size={18} />
                     </span>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="font-bold">Store {store.store_number}</p>
                       <p className="text-sm text-muted-foreground">{store.store_name}</p>
                     </div>
+                    {selectedMarket.can_edit && (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => removeStore(store)}
+                        aria-label={`Delete Store ${store.store_number}`}
+                        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-destructive hover:bg-destructive/10 disabled:opacity-40"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
                   </div>
                 ))}
                 {!selectedPatch.stores.length && (

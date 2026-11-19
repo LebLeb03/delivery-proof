@@ -25,7 +25,9 @@ function AccountPage() {
     damaged: number;
     missingItems: number;
   }>();
-  const isManager = context.roles.some((role) => role !== "crew");
+  const canAdminister = context.roles.some(
+    (role) => role === "company_admin" || role === "operations_manager" || role === "market_admin",
+  );
   const defaultStore =
     context.stores.find((store) => store.id === context.profile.default_store_id) ??
     context.stores[0];
@@ -158,7 +160,7 @@ function AccountPage() {
             </p>
           </div>
         </div>
-        {isManager && (
+        {canAdminister && (
           <Link
             to="/admin"
             className="mt-5 flex h-12 items-center justify-center gap-2 rounded-xl border font-bold text-[#16251f]"

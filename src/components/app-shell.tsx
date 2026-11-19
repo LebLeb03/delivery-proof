@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
-import { ClipboardList, Home, LogOut, PlusCircle, Search, Settings, UserRound } from "lucide-react";
+import { ClipboardList, Home, LogOut, PlusCircle, Search, UserRound } from "lucide-react";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppContextProvider } from "@/lib/app-context";
@@ -63,13 +63,6 @@ export function AuthenticatedShell() {
   const defaultStore =
     context.stores.find((store) => store.id === context.profile.default_store_id) ??
     context.stores[0];
-  const isManager = context.roles.some(
-    (role) =>
-      role === "company_admin" ||
-      role === "consultant" ||
-      role === "operations_manager" ||
-      role === "market_admin",
-  );
   return (
     <AppContextProvider value={context}>
       <div className="min-h-screen bg-[#f6f4ef] pb-24">
@@ -89,15 +82,6 @@ export function AuthenticatedShell() {
               </div>
             </Link>
             <div className="flex shrink-0 items-center gap-1">
-              {isManager && (
-                <Link
-                  to="/admin"
-                  aria-label="Administration"
-                  className="rounded-xl p-3 text-white/70 hover:bg-white/10 hover:text-white"
-                >
-                  <Settings size={19} />
-                </Link>
-              )}
               <button
                 aria-label="Sign out"
                 onClick={() => supabase.auth.signOut()}
@@ -112,7 +96,7 @@ export function AuthenticatedShell() {
         <nav className="fixed inset-x-0 bottom-0 z-30 border-t bg-white/95 backdrop-blur">
           <div className="mx-auto grid max-w-xl grid-cols-4 px-2 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-2">
             <NavLink to="/" label="Home" icon={<Home />} />
-            <NavLink to="/add" label="Add" icon={<PlusCircle />} />
+            <NavLink to="/add" label="Record" icon={<PlusCircle />} />
             <NavLink to="/search" label="Search" icon={<Search />} />
             <NavLink to="/account" label="Account" icon={<UserRound />} />
           </div>

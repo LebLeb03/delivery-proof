@@ -155,6 +155,11 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  ::selection {
+    background: color-mix(in oklab, var(--color-primary) 24%, white);
+    color: var(--color-foreground);
+  }
+
   button,
   a,
   input,
@@ -167,6 +172,12 @@
   select,
   textarea {
     font-size: 16px;
+    caret-color: var(--color-primary);
+  }
+
+  :focus-visible {
+    outline: 3px solid color-mix(in oklab, var(--color-primary) 35%, transparent);
+    outline-offset: 3px;
   }
 
   h1,

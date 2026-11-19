@@ -1,6 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Camera, Download, Edit3, History, Save, X } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  Camera,
+  CheckCircle2,
+  Download,
+  Edit3,
+  History,
+  Plus,
+  Save,
+  Search,
+  X,
+} from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
+import { z } from "zod";
 import { getVendors } from "@/lib/admin.functions";
 import { getDeliveryDetail, updateDelivery } from "@/lib/delivery.functions";
 import {
@@ -12,11 +23,13 @@ import {
 import type { DeliveryDetail, DeliveryStatus, VendorInfo } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/deliveries/$deliveryId")({
+  validateSearch: z.object({ saved: z.string().optional() }),
   component: DeliveryDetailPage,
 });
 
 function DeliveryDetailPage() {
   const { deliveryId } = Route.useParams();
+  const { saved } = Route.useSearch();
   const [delivery, setDelivery] = useState<DeliveryDetail | null>(null);
   const [vendors, setVendors] = useState<VendorInfo[]>([]);
   const [editing, setEditing] = useState(false);
@@ -67,6 +80,38 @@ function DeliveryDetailPage() {
     );
   return (
     <main className="mx-auto max-w-4xl px-5 py-7">
+      {saved === "1" && (
+        <section
+          className="mb-5 flex flex-col gap-4 rounded-2xl bg-[#daf6e5] p-5 text-[#145d36] sm:flex-row sm:items-center sm:justify-between"
+          role="status"
+        >
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="mt-0.5 shrink-0" />
+            <div>
+              <h1 className="font-display text-xl font-extrabold">Delivery saved</h1>
+              <p className="mt-1 text-sm">
+                Photos and delivery details are now in the store record.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Link
+              to="/"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#145d36] px-4 text-sm font-bold text-white"
+            >
+              <Plus size={17} /> New delivery
+            </Link>
+            <Link
+              to="/search"
+              search={{ q: "" }}
+              aria-label="Search deliveries"
+              className="grid min-h-11 min-w-11 place-items-center rounded-xl bg-white text-[#145d36]"
+            >
+              <Search size={18} />
+            </Link>
+          </div>
+        </section>
+      )}
       <section className="rounded-3xl bg-[#16251f] p-6 text-white md:p-8">
         <div className="flex items-start justify-between gap-3">
           <div>

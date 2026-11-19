@@ -1,21 +1,53 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, Camera, Clock3, ImagePlus, X } from "lucide-react";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import {
+  AlertTriangle,
+  Camera,
+  Check,
+  CheckCircle2,
+  Clock3,
+  ImagePlus,
+  PackageX,
+  TriangleAlert,
+  X,
+} from "lucide-react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { getVendors } from "@/lib/admin.functions";
 import { useAppContext } from "@/lib/app-context";
 import { addDeliveryPhoto, checkDuplicateOrder, createDelivery } from "@/lib/delivery.functions";
-import { STATUS_OPTIONS } from "@/lib/delivery-utils";
 import { compressImage } from "@/lib/image-utils";
 import type { DeliveryStatus, VendorInfo } from "@/lib/types";
-import { z } from "zod";
 
 export const Route = createFileRoute("/_authenticated/add")({
   validateSearch: z.object({ vendor: z.string().uuid().optional() }),
   component: AddDeliveryPage,
 });
+
+const statusOptions: Array<{
+  value: DeliveryStatus;
+  label: string;
+  description: string;
+  icon: typeof CheckCircle2;
+}> = [
+  { value: "received", label: "Received", description: "Everything arrived", icon: CheckCircle2 },
+  { value: "damaged", label: "Damaged", description: "Items arrived damaged", icon: PackageX },
+  {
+    value: "missing_items",
+    label: "Missing items",
+    description: "The order is incomplete",
+    icon: TriangleAlert,
+  },
+  {
+    value: "other_issue",
+    label: "Other issue",
+    description: "Something else is wrong",
+    icon: AlertTriangle,
+  },
+];
+
 const fieldClass =
-  "mt-2 h-12 w-full rounded-xl border bg-white px-4 outline-none focus:border-primary focus:ring-2 focus:ring-primary/15";
+  "mt-2 h-13 w-full rounded-xl border bg-white px-4 text-base outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10";
 
 function AddDeliveryPage() {
   const context = useAppContext();
@@ -34,15 +66,27 @@ function AddDeliveryPage() {
   const [progress, setProgress] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     getVendors()
-      .then(setVendors)
-      .catch(() => setError("Could not load vendors"));
+      .then((items) => setVendors(items.filter((item) => item.active)))
+      .catch(() => setError("Delivery partners could not be loaded. Try again."));
   }, []);
+
+  useEffect(() => {
+    if (selectedVendorId) setVendorId(selectedVendorId);
+  }, [selectedVendorId]);
+
   const previews = useMemo(
     () => files.map((file) => ({ file, url: URL.createObjectURL(file) })),
     [files],
   );
+
+  useEffect(() => () => previews.forEach(({ url }) => URL.revokeObjectURL(url)), [previews]);
+
+  const selectedVendor = vendors.find((vendor) => vendor.id === vendorId);
+  const canSubmit = Boolean(files.length && storeId && vendorId && orderNumber.trim());
+
   async function duplicateCheck() {
     if (!orderNumber.trim() || !storeId) return;
     try {
@@ -52,10 +96,15 @@ function AddDeliveryPage() {
       setDuplicateCount(0);
     }
   }
+
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!files.length) {
-      setError("Add at least one delivery photo.");
+      setError("Add at least one clear delivery photo.");
+      return;
+    }
+    if (!canSubmit) {
+      setError("Complete the partner, order number, store, and photo fields.");
       return;
     }
     setBusy(true);
@@ -85,40 +134,89 @@ function AddDeliveryPage() {
         });
         setProgress(Math.round(((index + 1) / files.length) * 100));
       }
-      void navigate({ to: "/deliveries/$deliveryId", params: { deliveryId: delivery.id } });
+      void navigate({
+        to: "/deliveries/$deliveryId",
+        params: { deliveryId: delivery.id },
+        search: { saved: "1" },
+      });
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not save delivery");
+      setError(
+        reason instanceof Error
+          ? `The delivery was not saved. ${reason.message}`
+          : "The delivery was not saved. Check your connection and try again.",
+      );
       setBusy(false);
     }
   }
-  return (
-    <main className="mx-auto max-w-3xl px-5 py-7">
-      <div>
-        <p className="text-sm font-bold uppercase tracking-[.15em] text-[#a83225]">New record</p>
-        <h1 className="mt-1 font-display text-3xl font-extrabold">Add delivery</h1>
-        <p className="mt-2 text-muted-foreground">
-          Capture clear photos and the essential delivery details.
+
+  if (!vendorId) {
+    return (
+      <main className="mx-auto max-w-3xl px-4 py-6 sm:px-5 sm:py-8">
+        <h1 className="font-display text-3xl font-extrabold">Choose a delivery partner</h1>
+        <p className="mt-2 text-base text-muted-foreground">
+          Your selection is saved with the record.
         </p>
-      </div>
-      <form onSubmit={submit} className="mt-6 space-y-4 sm:mt-7 sm:space-y-5">
-        <section className="rounded-2xl border bg-white p-4 sm:p-5">
-          <h2 className="font-display text-lg font-bold">Photo proof</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Labels, quantity and condition should be readable.
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          {vendors.map((vendor) => (
+            <button
+              key={vendor.id}
+              type="button"
+              onClick={() => setVendorId(vendor.id)}
+              className="flex min-h-32 flex-col justify-between rounded-2xl bg-[#16251f] p-5 text-left text-white shadow-[0_8px_24px_rgba(20,30,25,.12)] transition hover:-translate-y-0.5 focus-visible:ring-4 focus-visible:ring-[#e24a32]/30 active:scale-[.98]"
+            >
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-white/12 text-lg font-extrabold">
+                {vendor.vendor_name.charAt(0)}
+              </span>
+              <span className="mt-7 text-lg font-extrabold">{vendor.vendor_name}</span>
+            </button>
+          ))}
+        </div>
+        {error && <StatusMessage>{error}</StatusMessage>}
+      </main>
+    );
+  }
+
+  return (
+    <main className="mx-auto max-w-3xl px-4 py-6 sm:px-5 sm:py-8">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-3xl font-extrabold">Record delivery</h1>
+          <p className="mt-2 text-base text-muted-foreground">
+            {selectedVendor?.vendor_name ?? "Delivery partner"}
           </p>
-          <label className="mt-4 flex min-h-44 cursor-pointer touch-manipulation flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#e24a32]/35 bg-[#e24a32]/5 px-4 text-center active:bg-[#e24a32]/10">
-            <Camera className="h-7 w-7 text-[#e24a32]" />
-            <span className="mt-2 text-base font-bold">Take photos or choose files</span>
-            <span className="mt-1 text-xs text-muted-foreground">Multiple images supported</span>
+        </div>
+        <Link
+          to="/"
+          className="rounded-xl border bg-white px-4 py-2.5 text-sm font-bold text-[#16251f]"
+        >
+          Change partner
+        </Link>
+      </div>
+
+      <form onSubmit={submit} className="mt-7 space-y-7">
+        <section aria-labelledby="photos-heading">
+          <StepHeading
+            number="1"
+            id="photos-heading"
+            title="Add photo proof"
+            description="Show labels, quantity, and condition."
+          />
+          <label className="mt-4 flex min-h-48 cursor-pointer touch-manipulation flex-col items-center justify-center rounded-2xl bg-white px-5 text-center shadow-[0_8px_24px_rgba(20,30,25,.08)] ring-1 ring-[#e24a32]/20 transition active:bg-[#fff5f2]">
+            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[#e24a32] text-white">
+              <Camera size={27} />
+            </span>
+            <span className="mt-3 text-lg font-extrabold">Take photos</span>
+            <span className="mt-1 text-sm text-muted-foreground">Camera or photo library</span>
             <input
               className="sr-only"
               type="file"
               accept="image/*"
               capture="environment"
               multiple
-              onChange={(event) =>
-                setFiles((current) => [...current, ...Array.from(event.target.files ?? [])])
-              }
+              onChange={(event) => {
+                setFiles((current) => [...current, ...Array.from(event.target.files ?? [])]);
+                event.currentTarget.value = "";
+              }}
             />
           </label>
           {previews.length > 0 && (
@@ -131,136 +229,212 @@ function AddDeliveryPage() {
                   <img
                     src={url}
                     className="h-full w-full object-cover"
-                    alt={`Preview ${index + 1}`}
+                    alt={`Delivery photo ${index + 1}`}
                   />
+                  <span className="absolute bottom-1.5 left-1.5 rounded-lg bg-black/70 px-2 py-1 text-xs font-bold text-white">
+                    {index + 1}
+                  </span>
                   <button
                     type="button"
-                    aria-label="Remove photo"
+                    aria-label={`Remove photo ${index + 1}`}
                     onClick={() =>
                       setFiles((items) => items.filter((_, itemIndex) => itemIndex !== index))
                     }
-                    className="absolute right-1 top-1 grid h-8 w-8 place-items-center rounded-full bg-black/70 text-white"
+                    className="absolute right-1.5 top-1.5 grid h-9 w-9 place-items-center rounded-full bg-black/75 text-white"
                   >
-                    <X size={14} />
+                    <X size={16} />
                   </button>
                 </div>
               ))}
             </div>
           )}
         </section>
-        <section className="rounded-2xl border bg-white p-4 sm:p-5">
-          <h2 className="font-display text-lg font-bold">Delivery details</h2>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <label className="text-sm font-semibold">
+
+        <section aria-labelledby="details-heading">
+          <StepHeading
+            number="2"
+            id="details-heading"
+            title="Add delivery details"
+            description="Only the essentials are required."
+          />
+          <div className="mt-4 rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(20,30,25,.08)] sm:p-5">
+            <label className="block text-sm font-bold">
               Order number
               <input
                 required
+                autoComplete="off"
+                maxLength={100}
                 value={orderNumber}
                 onChange={(event) => setOrderNumber(event.target.value)}
                 onBlur={duplicateCheck}
-                placeholder="e.g. MB-00981"
+                placeholder="Enter the order number"
                 className={fieldClass}
               />
             </label>
-            <label className="text-sm font-semibold">
-              Vendor
-              <select
-                required
-                value={vendorId}
-                onChange={(event) => setVendorId(event.target.value)}
-                className={fieldClass}
-              >
-                <option value="">Select vendor</option>
-                {vendors
-                  .filter((vendor) => vendor.active)
-                  .map((vendor) => (
-                    <option key={vendor.id} value={vendor.id}>
-                      {vendor.vendor_name}
+
+            {context.stores.length > 1 ? (
+              <label className="mt-5 block text-sm font-bold">
+                Store
+                <select
+                  required
+                  value={storeId}
+                  onChange={(event) => setStoreId(event.target.value)}
+                  className={fieldClass}
+                >
+                  {context.stores.map((store) => (
+                    <option key={store.id} value={store.id}>
+                      Store {store.store_number}
+                      {store.store_name ? ` ${store.store_name}` : ""}
                     </option>
                   ))}
-              </select>
-            </label>
-            <label className="text-sm font-semibold">
-              Store
-              <select
-                required
-                value={storeId}
-                onChange={(event) => setStoreId(event.target.value)}
-                className={fieldClass}
-              >
-                {context.stores.map((store) => (
-                  <option key={store.id} value={store.id}>
-                    Store {store.store_number}
-                    {store.store_name ? ` ${store.store_name}` : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-sm font-semibold">
-              Status
-              <select
-                value={status}
-                onChange={(event) => setStatus(event.target.value as DeliveryStatus)}
-                className={fieldClass}
-              >
-                {STATUS_OPTIONS.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          {duplicateCount > 0 && (
-            <div className="mt-4 flex gap-3 rounded-xl bg-[#fff0cd] p-4 text-sm text-[#684800]">
-              <AlertTriangle className="shrink-0" size={19} />
-              <p>
-                <strong>
-                  {duplicateCount} existing record{duplicateCount === 1 ? "" : "s"}
-                </strong>{" "}
-                use this order number at the selected store. Saving will create a separate delivery.
-                It will never overwrite the others.
+                </select>
+              </label>
+            ) : (
+              <p className="mt-5 rounded-xl bg-[#edf1ee] px-4 py-3 text-sm text-[#34473d]">
+                Saving to Store {context.stores[0]?.store_number}
+                {context.stores[0]?.store_name ? ` ${context.stores[0].store_name}` : ""}
               </p>
-            </div>
-          )}
-          <label className="mt-4 block text-sm font-semibold">
-            Notes <span className="font-normal text-muted-foreground">(optional)</span>
-            <textarea
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              className="mt-2 min-h-28 w-full rounded-xl border bg-white p-4 outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
-            />
-          </label>
-          <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock3 size={16} />
-            The exact date and time, including seconds, is recorded automatically.
-          </p>
+            )}
+
+            {duplicateCount > 0 && (
+              <div
+                className="mt-4 flex gap-3 rounded-xl bg-[#fff0cd] p-4 text-sm text-[#684800]"
+                role="status"
+              >
+                <AlertTriangle className="shrink-0" size={19} />
+                <p>
+                  This order number already has {duplicateCount} record
+                  {duplicateCount === 1 ? "" : "s"} at this store. Confirm the number before saving.
+                </p>
+              </div>
+            )}
+
+            <fieldset className="mt-5">
+              <legend className="text-sm font-bold">Delivery condition</legend>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {statusOptions.map((option) => {
+                  const Icon = option.icon;
+                  const selected = status === option.value;
+                  return (
+                    <label
+                      key={option.value}
+                      className={`relative min-h-28 cursor-pointer rounded-xl p-3 transition ${selected ? "bg-[#16251f] text-white ring-2 ring-[#16251f]" : "bg-[#f3f2ee] text-[#27342e] hover:bg-[#ebeae5]"}`}
+                    >
+                      <input
+                        type="radio"
+                        name="status"
+                        value={option.value}
+                        checked={selected}
+                        onChange={() => setStatus(option.value)}
+                        className="sr-only"
+                      />
+                      <div className="flex items-start justify-between gap-2">
+                        <Icon size={20} />
+                        {selected && <Check size={18} aria-hidden="true" />}
+                      </div>
+                      <span className="mt-4 block text-sm font-extrabold">{option.label}</span>
+                      <span
+                        className={`mt-1 block text-xs ${selected ? "text-white/70" : "text-muted-foreground"}`}
+                      >
+                        {option.description}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            <label className="mt-5 block text-sm font-bold">
+              Notes <span className="font-normal text-muted-foreground">optional</span>
+              <textarea
+                value={notes}
+                maxLength={2000}
+                onChange={(event) => setNotes(event.target.value)}
+                placeholder="Add damage, shortages, or follow-up details"
+                className="mt-2 min-h-28 w-full rounded-xl border bg-white p-4 text-base outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+              />
+            </label>
+            <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock3 size={16} /> Date and time are recorded automatically.
+            </p>
+          </div>
         </section>
-        {error && (
-          <p className="rounded-xl bg-destructive/10 p-4 text-sm text-destructive">{error}</p>
-        )}
+
+        {error && <StatusMessage>{error}</StatusMessage>}
+
         {busy && (
-          <div className="rounded-xl border bg-white p-4">
-            <div className="mb-2 flex justify-between text-sm font-semibold">
-              <span>Uploading delivery</span>
-              <span>{progress}%</span>
+          <div
+            className="rounded-xl bg-white p-4 shadow-[0_8px_24px_rgba(20,30,25,.08)]"
+            aria-live="polite"
+          >
+            <div className="mb-2 flex justify-between text-sm font-bold">
+              <span>Saving photos</span>
+              <span className="tabular-nums">{progress}%</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full bg-[#e24a32] transition-all"
+                className="h-full bg-[#e24a32] transition-[width]"
                 style={{ width: `${progress}%` }}
               />
             </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Keep this page open until the record is complete.
+            </p>
           </div>
         )}
-        <button
-          disabled={busy}
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#e24a32] font-bold text-white shadow-lg disabled:opacity-60"
-        >
-          <ImagePlus size={20} />
-          {busy ? "Saving delivery…" : "Save delivery"}
-        </button>
+
+        <div className="sticky bottom-20 z-10 -mx-2 rounded-2xl bg-[#f6f4ef]/95 p-2 backdrop-blur-sm">
+          <button
+            disabled={busy || !canSubmit}
+            className="flex min-h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#e24a32] px-5 font-extrabold text-white shadow-[0_8px_24px_rgba(226,74,50,.24)] transition enabled:hover:bg-[#cf3f2a] enabled:active:scale-[.99] disabled:cursor-not-allowed disabled:bg-[#c9cdca] disabled:text-[#68716c] disabled:shadow-none"
+          >
+            <ImagePlus size={20} />
+            {busy ? "Saving delivery" : "Save delivery record"}
+          </button>
+          {!canSubmit && !busy && (
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Add a photo and order number to continue.
+            </p>
+          )}
+        </div>
       </form>
     </main>
+  );
+}
+
+function StepHeading({
+  number,
+  id,
+  title,
+  description,
+}: {
+  number: string;
+  id: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#16251f] font-extrabold text-white">
+        {number}
+      </span>
+      <div>
+        <h2 id={id} className="font-display text-xl font-bold">
+          {title}
+        </h2>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function StatusMessage({ children }: { children: ReactNode }) {
+  return (
+    <p
+      className="mt-4 rounded-xl bg-destructive/10 p-4 text-sm font-semibold text-destructive"
+      role="alert"
+    >
+      {children}
+    </p>
   );
 }

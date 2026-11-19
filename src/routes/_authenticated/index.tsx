@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Camera, ClipboardCheck, Search, Truck } from "lucide-react";
+import { ArrowRight, Camera, Search } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { DeliveryCard, EmptyDeliveries } from "@/components/delivery-card";
 import { getVendors } from "@/lib/admin.functions";
@@ -48,48 +48,38 @@ function HomePage() {
   return (
     <main className="mx-auto max-w-5xl px-4 py-5 sm:px-5 sm:py-7">
       <section>
-        <p className="text-sm font-bold uppercase tracking-[.15em] text-[#a83225]">New delivery</p>
-        <h1 className="mt-1 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
-          Tap partner. Take photo.
+        <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
+          Record a delivery
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Choose the job you need to complete now.
-        </p>
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <p className="mt-2 text-base text-muted-foreground">Choose the delivery partner.</p>
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {vendors.slice(0, 3).map((vendor) => (
             <Link
               key={vendor.id}
               to="/add"
               search={{ vendor: vendor.id }}
-              className={`group flex min-h-44 flex-col rounded-3xl p-4 text-white shadow-sm transition active:scale-[.98] sm:p-5 ${vendorColor(vendor.vendor_name)}`}
+              className={`group flex min-h-40 flex-col rounded-2xl p-4 text-white shadow-[0_8px_24px_rgba(20,30,25,.12)] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#e24a32]/30 active:scale-[.98] sm:min-h-44 sm:p-5 ${vendorColor(vendor.vendor_name)} ${vendors.slice(0, 3).length === 3 ? "last:col-span-2 sm:last:col-span-1" : ""}`}
             >
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/15 text-xl font-extrabold">
                 {vendor.vendor_name.charAt(0)}
               </span>
               <p className="mt-auto pt-7 text-lg font-extrabold sm:text-xl">{vendor.vendor_name}</p>
               <p className="mt-1 flex items-center gap-2 text-sm font-bold text-white/80">
-                <Camera size={16} /> Open camera
+                <Camera size={16} /> Take photos <ArrowRight size={15} />
               </p>
             </Link>
           ))}
-          <Link
-            to="/travel-paths"
-            className="group flex min-h-44 flex-col rounded-3xl bg-[#173327] p-4 text-white shadow-sm transition active:scale-[.98] sm:p-5"
-          >
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/15">
-              <ClipboardCheck size={25} />
-            </span>
-            <p className="mt-auto pt-7 text-lg font-extrabold sm:text-xl">Travel Paths</p>
-            <p className="mt-1 flex items-center gap-2 text-sm font-bold text-white/80">
-              <Truck size={16} /> Station readiness
-            </p>
-          </Link>
         </div>
-        <p className="mt-3 rounded-2xl bg-[#e9efea] px-4 py-3 text-sm text-[#425248]">
-          One tap opens the correct delivery or station workflow.
-        </p>
+        {!loading && vendors.length === 0 && (
+          <p className="mt-4 rounded-xl bg-[#fff0cd] p-4 text-sm font-semibold text-[#684800]">
+            No delivery partners are available. Ask an administrator to activate a partner.
+          </p>
+        )}
       </section>
-      <form onSubmit={submit} className="mt-7 rounded-2xl border bg-white p-4 shadow-sm">
+      <form
+        onSubmit={submit}
+        className="mt-8 rounded-2xl bg-white p-3 shadow-[0_8px_24px_rgba(20,30,25,.08)]"
+      >
         <label className="relative block">
           <Search
             className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
@@ -103,7 +93,7 @@ function HomePage() {
           />
         </label>
       </form>
-      <div className="mt-8 flex items-end justify-between">
+      <div className="mt-9 flex items-end justify-between">
         <div>
           <h2 className="font-display text-2xl font-bold">Recent deliveries</h2>
         </div>
